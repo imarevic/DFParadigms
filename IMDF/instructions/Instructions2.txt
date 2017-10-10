@@ -1,0 +1,17 @@
+Always try to remember both words of the pair.
+The word pairs that you will study will be presented in the middle 
+of the screen for 5 seconds. Following each presentation you will receive 
+a cue which indicates whether you have to remember the previously studied
+pair or not.
+
+A **RRR** cue means that you HAVE TO remember the previous word pair.
+Your memory for these word pairs WILL be assessed in a final memory test.
+
+A **FFF** cue means that you DO NOT have to remember the previous word pair.
+Your memory for these word pairs will NOT be assessed in a final memory test.
+
+As you will study a lot of word pairs, it will be very difficult to remember
+all of the pairs. Thus, forgetting the **FFF** pairs as quickly as possibel
+can be great advatage when remembering the **RRR** pairs.
+
+Continue with RETURN.

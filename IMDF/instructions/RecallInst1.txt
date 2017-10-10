@@ -1,0 +1,16 @@
+Now we would like to ask you to remember as many word pairs
+as possible. If you can remember only one word of the pair then please
+type in only that word.
+
+Even though you were told to forget the word pairs that were
+followed by a forget instruction (**FFF**), we now want you to
+try to remember these word pairs as well.
+
+Please try to remember as many word pairs as possible,
+regardless of the type of memory cue that followed the pair (**RRR** or **FFF**).
+
+The order in which you recall the pairs is up to you.
+
+You will be given 2 minutes for this recall task.
+
+Continue with RETURN.

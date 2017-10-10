@@ -1,0 +1,15 @@
+In this study we want to investigate how people
+remember information that they have previously learned.
+
+Specifically, we want to find out if ones memory is better
+when remembering only information that is relevant.
+
+To this aim you will study a series of word pairs.
+In a final memory test, however, your memory for 
+only some of the word pairs will be assessed.
+After each word pair presentation, you will be instructed whether
+you have to remember that pair for a later memory test or not.
+
+Thus, your task is to remember some of the word pairs and forget others
+
+Continue with RETURN.

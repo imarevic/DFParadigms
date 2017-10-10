@@ -1,0 +1,6 @@
+ATTENTION:
+You will be presented with first words of the pairs from all
+previously studied word pairs. Thus, please try to remember the second word
+of the pair regardless of memory cue (**RRR** or **FFF**).
+
+Continue with RETURN.

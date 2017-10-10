@@ -1,0 +1,12 @@
+You have reached the end of this study.
+
+Please remain seated until the end of the session.
+
+We thank you for participating!
+
+
+
+
+
+Note for lab assistants:
+Press "q" on the keyboard to quit the program.

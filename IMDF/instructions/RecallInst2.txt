@@ -1,0 +1,15 @@
+Please type each word pair on the keyboard as follows and
+press RETURN after each recall attempt:
+
+word 1 - word 2
+
+Once you press RETURN, the typed word will appear bellow.
+
+If you can recall only one word of the pair, then type only
+that word and press RETURN.
+
+ATTENTION:
+Pease recall as many word pairs as possible, regardless of
+memory cue (**RRR** or **FFF**).
+
+Continue with RETURN.

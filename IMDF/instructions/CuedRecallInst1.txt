@@ -1,0 +1,13 @@
+Now you will perform another memory test for the same word pairs.
+In this memory test you will be presented with the first word of a pair
+and your task will be to recall the corresponding second word.
+The first word of the pair will appear on the left side of the screen
+and you have to recall the corresponding word and type it on the keyboard.
+
+After you have typed a word, please press RETURN.
+Then the next first word of a pair will be presented to you.
+
+If you are unable to recall the second word for a given pair, just
+press RETURN to get to the next word.
+
+Continue with RETURN.

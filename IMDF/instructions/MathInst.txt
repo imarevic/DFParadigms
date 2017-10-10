@@ -1,0 +1,13 @@
+Now we would like to asses your ability to solve arithmetic problems.
+
+In the following, you will be presented with a series of math equations.
+Each of the equations could look like this:
+
+Example: 12 + 8 = 20
+
+Your task will be to decide if the presented equation is TRUE or FALSE.
+
+Press [J] if you think the equation is true.
+Press [F] if you think the equation is false.
+
+Continue with RETURN.
