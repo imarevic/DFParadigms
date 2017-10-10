@@ -11,5 +11,3 @@ Psychology: Learning, Memory, and Cognition*, 42, 1526–
 Marevic, I., Arnold, N. R., & Rummel, J. (2017). Item-method directed forgetting and working memory capacity: A hierarchical multinomial modeling approach. *The Quarterly Journal of Experimental Psychology*, advanced online publication.
 
 ---
-
-### Copyright
