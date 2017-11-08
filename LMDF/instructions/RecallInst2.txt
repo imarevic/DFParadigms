@@ -1,0 +1,8 @@
+Tippen Sie die Wörter einfach auf der Tastatur ein und drücken Sie Enter
+nach jeder Eingabe. 
+
+Für den Abruf haben Sie 90 Sekunden Zeit.
+Sobald die Zeit abgelaufen ist, wird die Eingabe automatisch beendet.
+
+
+Weiter mit ENTER.

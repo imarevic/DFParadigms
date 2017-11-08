@@ -1,0 +1,16 @@
+In dieser Studie soll untersucht werden, wie gut sich Menschen 
+an bestimmte Informationen erinnern können. 
+Wir wollen herausfinden, ob das menschliche Gedächtnis besser wird, 
+wenn man sich nur an die Informationen erinnert, die für einen relevant sind.
+
+Das heisst, Sie werden in dieser Studie mehrere Listen an Wörtern lernen. 
+Die Wörter einer Liste werden Ihnen nacheinander in der Mitte des Bildschirmes präsentiert.
+
+Im Anschluss an das Lernen jeder Liste werden Sie für 30 Sekunden Matheaufgaben lösen, 
+da wir an Ihrer Verarbeitungsgeschwindigkeit nach jedem Lerndurchgang interessiert sind.
+
+In einem darauffolgenden Test werden jedoch nicht alle Listen abgefragt. 
+Ob Sie sich eine Liste für einen späteren Test merken sollen oder nicht, 
+erfahren Sie nach dem Lernen jeder Liste. 
+
+Weiter mit ENTER.

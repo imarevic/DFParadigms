@@ -13,8 +13,9 @@ class Settings:
         self.initializePygame()
 
         # ========== Some Graphics Parameters =========== #
-        self.screenWidth = 1920
-        self.screenHeight = 1080
+        self.screenInfoObject = pygame.display.Info()
+        self.screenWidth = self.screenInfoObject.current_w
+        self.screenHeight = self.screenInfoObject.current_h
         self.instWidth = self.screenWidth - (self.screenWidth / 6)
         self.instHeigth = self.screenHeight - (self.screenHeight / 6)
         self.bgColor = (255, 255, 255)

@@ -1,5 +1,6 @@
 import pygame
 import csv
+from itertools import zip_longest
 from settings import Settings
 from instBlitter import Textblock
 from textInput import TextInput
@@ -23,12 +24,25 @@ class Experiment:
         self.question = None
         self.userInput = None
         self.countdown = None
-        self.memCue = None
         self.mathItem = None
         self.response = None
         self.responseTime = 0
         self.clock = pygame.time.Clock()
-        self.results = []
+        self.results = {
+            "subject": [self.settings.subject],
+            "group": [self.settings.group],
+            "balance": [self.settings.balance],
+            "L1words": "",
+            "L2words": "",
+            "L1recall": "",
+            "L2recall": "",
+            "age": [],
+            "gender": [],
+            "major": [],
+            "semester": [],
+            "mothertongue": []
+        }
+
 
         # ======= Initialize Screen ===== #
         self.prepare()
@@ -38,24 +52,93 @@ class Experiment:
 
         # Runs the experiment loop
         while True:
-
+            # === Welcome Part === #
             self.startWelcomeIntroBlock()
+
+            # === Practice Block === #
+            self.startPracticeIntroBlock()
+            # learn L1
+            self.startL1IntroBlock()
             self.startLearningInitBlock()
             self.startCountdownBlock()
-            self.startStudyBlock()
+            self.startStudyBlock(self.settings.practiceList1) # PracticeList 1 presentation
+            self.startFORManipBlock()
+            # distractor math task
             self.startMathIntroBlock()
             self.startMathInitBlock()
             self.startCountdownBlock()
             self.startMathBlock(30.0)
             self.startMathEndBlock()
-            self.startFreeRecallIntroBlock()
+            # learn L2
+            self.startL2IntroBlock()
+            self.startLearningInitBlock()
+            self.startCountdownBlock()
+            self.startStudyBlock(self.settings.practiceList2) # PracticeLlist 2 presentation
+            self.startREMManipBlock()
+            # distractor math task
+            self.startMathIntroBlock()
+            self.startMathInitBlock()
+            self.startCountdownBlock()
+            self.startMathBlock(30.0)
+            self.startMathEndBlock()
+            # recall L2
+            self.startPracRecallIntroBlock()
             self.startRecallInitBlock()
             self.doFreeRecall(30.0)
-            self.startFreeRecallEndBlock()
-            self.startCuedRecallIntroBlock()
+            self.startRecallEndBlock()
+
+            # ====REAL STUDY === #
+            self.startPracRecallEndBlock()
+            self.startIntroStudyBlock()
+
+            # learn L1
+            self.startL1IntroBlock()
+            self.startLearningInitBlock()
+            self.startCountdownBlock()
+            self.startStudyBlock(self.settings.wordsList1) # list 1 presentation
+            # F vs R Manipulation
+            if self.settings.group == "FORCont" or self.settings.group == "FORReinst":
+                self.startFORManipBlock()
+            elif self.settings.group == "REMCont" or self.settings.group == "REMReinst":
+                self.startREMManipBlock()
+            # distractor math task
+            self.startMathIntroBlock()
+            self.startMathInitBlock()
+            self.startCountdownBlock()
+            self.startMathBlock(30.0)
+            self.startMathEndBlock()
+            # learn L2
+            self.startL2IntroBlock()
+            self.startLearningInitBlock()
+            self.startCountdownBlock()
+            self.startStudyBlock(self.settings.wordsList2) # list 2 presentation
+            self.startREMManipBlock()
+
+            # distractor math task
+            self.startMathIntroBlock()
+            self.startMathInitBlock()
+            self.startCountdownBlock()
+            self.startMathBlock(30.0)
+            self.startMathEndBlock()
+            # F vs R recall instructions L1
+            if self.settings.group == "FORCont" or self.settings.group == "FORReinst":
+                self.startinstFORRecallL1Block()
+            elif self.settings.group == "REMCont" or self.settings.group == "REMReinst":
+                self.startinstREMRecallL1Block()
+            # initiate recall L1
             self.startRecallInitBlock()
-            self.doCuedRecall()
-            self.startCuedRecallEndBlock()
+            self.doFreeRecallL1(30.0)
+            self.startRecallEndBlock()
+            # F vs R recall instructions L2
+            if self.settings.group == "FORCont" or self.settings.group == "FORReinst":
+                self.startinstFORRecallL2Block()
+            elif self.settings.group == "REMCont" or self.settings.group == "REMReinst":
+                self.startinstREMRecallL2Block()
+            self.startRecallInitBlock()
+            self.doFreeRecallL2(30.0)
+            self.startRecallEndBlock()
+
+            # === Demographic Questions === #
             self.startDemIntroBlock()
             self.doDemQuestions()
             self.saveResultsToFile(self.settings.filename, self.results)
@@ -80,7 +163,7 @@ class Experiment:
 
     def processInstEvents(self):
         """Sample user input for instructions."""
-
+        pygame.event.clear()
         while True:
             event = pygame.event.wait()
             if event.type == pygame.QUIT:
@@ -89,8 +172,10 @@ class Experiment:
             # Respond to a keypress
                 if event.key == pygame.K_ESCAPE:
                     quit()
-                elif event.key == pygame.K_RETURN or pygame.K_SPACE:
+                elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                     break
+                elif event.key != pygame.K_RETURN or event.key != pygame.K_SPACE:
+                    pass
 
     def processQuitExpEvent(self):
         """Sample user input for quitting at study end."""
@@ -111,6 +196,7 @@ class Experiment:
         self.screen = pygame.display.set_mode((self.settings.screenWidth,
                                  self.settings.screenHeight), pygame.FULLSCREEN)
         pygame.display.set_caption("IMDF Experiment") # in fullscreen mode this is redundant
+        pygame.mouse.set_visible(False)
         self.clock.tick(self.settings.FPS) # Add Frame rate
         # Get rect of the screen
         self.screenRect = self.screen.get_rect()
@@ -149,6 +235,42 @@ class Experiment:
         pygame.display.flip()
         self.processInstEvents()
 
+    def startPracticeIntroBlock(self):
+        # Presentation of Welcome screen
+        self.screen.fill(self.settings.bgColor)
+        self.textwidth = self.settings.instWidth
+        self.textheigth = self.settings.instHeigth
+        self.instPractice = self.textblock.textObject(self.settings.introPractice, self.settings.instFont,
+                                                      self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.instPractice, (self.screenRect.centerx - (self.textwidth/2),
+                                             self.screenRect.centery - (self.textheigth/2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+    def startL1IntroBlock(self):
+        # Presentation of Welcome screen
+        self.screen.fill(self.settings.bgColor)
+        self.textwidth = self.settings.instWidth
+        self.textheigth = self.settings.instHeigth
+        self.instL1 = self.textblock.textObject(self.settings.introL1, self.settings.instFont,
+                                                      self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.instL1, (self.screenRect.centerx - (self.textwidth/2),
+                                             self.screenRect.centery - (self.textheigth/2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+    def startL2IntroBlock(self):
+        # Presentation of Welcome screen
+        self.screen.fill(self.settings.bgColor)
+        self.textwidth = self.settings.instWidth
+        self.textheigth = self.settings.instHeigth
+        self.instL2 = self.textblock.textObject(self.settings.introL2, self.settings.instFont,
+                                                      self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.instL2, (self.screenRect.centerx - (self.textwidth/2),
+                                             self.screenRect.centery - (self.textheigth/2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
     def startLearningInitBlock(self):
         # Presentation of Learning Init screen
         self.screen.fill(self.settings.bgColor)
@@ -161,74 +283,65 @@ class Experiment:
         pygame.display.flip()
         self.processInstEvents()
 
+    def startREMManipBlock(self):
+        # Presentation of Learning Init screen
+        self.screen.fill(self.settings.bgColor)
+        self.textwidth = self.settings.instWidth
+        self.textheigth = self.settings.instHeigth
+        self.remManip = self.textblock.textObject(self.settings.rememberManip, self.settings.instFont,
+                                                      self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.remManip, (self.screenRect.centerx - (self.textwidth/2),
+                                             self.screenRect.centery - (self.textheigth/2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+    def startFORManipBlock(self):
+        # Presentation of Learning Init screen
+        self.screen.fill(self.settings.bgColor)
+        self.textwidth = self.settings.instWidth
+        self.textheigth = self.settings.instHeigth
+        self.forManip = self.textblock.textObject(self.settings.forgetManip, self.settings.instFont,
+                                                      self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.forManip, (self.screenRect.centerx - (self.textwidth/2),
+                                             self.screenRect.centery - (self.textheigth/2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
     def startMathIntroBlock(self):
         # Presentation of first Math Intro screen
         self.screen.fill(self.settings.bgColor)
         self.textwidth = self.settings.instWidth
         self.textheigth = self.settings.instHeigth
-        self.instMath = self.textblock.textObject(self.settings.mathText, self.settings.instFont,
+        self.instMath = self.textblock.textObject(self.settings.introMath, self.settings.instFont,
                                                   self.settings.instWidth, self.settings.instHeigth)
         self.screen.blit(self.instMath, (self.screenRect.centerx - (self.textwidth / 2),
                                          self.screenRect.centery - (self.textheigth / 2)))
         pygame.display.flip()
         self.processInstEvents()
 
-    def startFreeRecallIntroBlock(self):
+    def startPracRecallIntroBlock(self):
         # Presentation of first FR Intro screen
         self.screen.fill(self.settings.bgColor)
         self.textwidth = self.settings.instWidth
         self.textheigth = self.settings.instHeigth
-        self.instFreeRecall1 = self.textblock.textObject(self.settings.FRText1, self.settings.instFont,
+        self.instPracRecall = self.textblock.textObject(self.settings.instPracRecall, self.settings.instFont,
                                                   self.settings.instWidth, self.settings.instHeigth)
-        self.screen.blit(self.instFreeRecall1, (self.screenRect.centerx - (self.textwidth / 2),
+        self.screen.blit(self.instPracRecall, (self.screenRect.centerx - (self.textwidth / 2),
                                          self.screenRect.centery - (self.textheigth / 2)))
         pygame.display.flip()
         self.processInstEvents()
-
-        # Presentation of second FR Intro screen
-        self.screen.fill(self.settings.bgColor)
-        self.instFreeRecall2 = self.textblock.textObject(self.settings.FRText2, self.settings.instFont,
-                                                  self.settings.instWidth, self.settings.instHeigth)
-        self.screen.blit(self.instFreeRecall2, (self.screenRect.centerx - (self.textwidth / 2),
-                                         self.screenRect.centery - (self.textheigth / 2)))
-        pygame.display.flip()
-        self.processInstEvents()
-
-    def startCuedRecallIntroBlock(self):
-        # Presentation of first Math Intro screen
-        self.screen.fill(self.settings.bgColor)
-        self.textwidth = self.settings.instWidth
-        self.textheigth = self.settings.instHeigth
-
-        self.instCuedRecall1 = self.textblock.textObject(self.settings.CRText1, self.settings.instFont,
-                                                         self.settings.instWidth, self.settings.instHeigth)
-        self.screen.blit(self.instCuedRecall1, (self.screenRect.centerx - (self.textwidth / 2),
-                                                self.screenRect.centery - (self.textheigth / 2)))
-        pygame.display.flip()
-        self.processInstEvents()
-
-        # Presentation of second FR Intro screen
-        self.screen.fill(self.settings.bgColor)
-        self.instCuedRecall2 = self.textblock.textObject(self.settings.CRText2, self.settings.instFont,
-                                                         self.settings.instWidth, self.settings.instHeigth)
-        self.screen.blit(self.instCuedRecall2, (self.screenRect.centerx - (self.textwidth / 2),
-                                                self.screenRect.centery - (self.textheigth / 2)))
-        pygame.display.flip()
-        self.processInstEvents()
-
 
     def startDemIntroBlock(self):
         # Presentation of Dem. Questions Intro screen
         self.screen.fill(self.settings.bgColor)
         self.textwidth = self.settings.instWidth
         self.textheigth = self.settings.instHeigth
-        self.instDem = self.textblock.textObject(self.settings.demText, self.settings.instFont,
+        self.instDem = self.textblock.textObject(self.settings.introDem, self.settings.instFont,
                                                   self.settings.instWidth, self.settings.instHeigth)
         self.screen.blit(self.instDem, (self.screenRect.centerx - (self.textwidth / 2),
                                          self.screenRect.centery - (self.textheigth / 2)))
         pygame.display.flip()
         self.processInstEvents()
-
 
     def startRecallInitBlock(self):
         # Presentation of recall init screen
@@ -240,6 +353,94 @@ class Experiment:
                                                         self.settings.instWidth, self.settings.instHeigth)
         self.screen.blit(self.instRecallInit, (self.screenRect.centerx - (self.textwidth / 2),
                                                self.screenRect.centery - (self.textheigth / 2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+    def startinstREMRecallL1Block(self):
+        # Presentation of recall init screen
+        self.screen.fill(self.settings.bgColor)
+        self.textwidth = self.settings.instWidth
+        self.textheigth = self.settings.instHeigth
+
+        self.instREML1Recall = self.textblock.textObject(self.settings.instREMRecallL1, self.settings.instFont,
+                                                        self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.instREML1Recall, (self.screenRect.centerx - (self.textwidth / 2),
+                                               self.screenRect.centery - (self.textheigth / 2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+        # Presentation of second FR Intro screen
+        self.screen.fill(self.settings.bgColor)
+        self.instGenRecall = self.textblock.textObject(self.settings.instRecall, self.settings.instFont,
+        self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.instGenRecall, (self.screenRect.centerx - (self.textwidth / 2),
+        self.screenRect.centery - (self.textheigth / 2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+    def startinstREMRecallL2Block(self):
+        # Presentation of recall init screen
+        self.screen.fill(self.settings.bgColor)
+        self.textwidth = self.settings.instWidth
+        self.textheigth = self.settings.instHeigth
+
+        self.instREML2Recall = self.textblock.textObject(self.settings.instREMRecallL2, self.settings.instFont,
+                                                        self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.instREML2Recall, (self.screenRect.centerx - (self.textwidth / 2),
+                                               self.screenRect.centery - (self.textheigth / 2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+        # Presentation of second FR Intro screen
+        self.screen.fill(self.settings.bgColor)
+        self.instGenRecall = self.textblock.textObject(self.settings.instRecall, self.settings.instFont,
+        self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.instGenRecall, (self.screenRect.centerx - (self.textwidth / 2),
+        self.screenRect.centery - (self.textheigth / 2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+    def startinstFORRecallL1Block(self):
+        # Presentation of recall init screen
+        self.screen.fill(self.settings.bgColor)
+        self.textwidth = self.settings.instWidth
+        self.textheigth = self.settings.instHeigth
+
+        self.instFORL1Recall = self.textblock.textObject(self.settings.instFORRecallL1, self.settings.instFont,
+                                                        self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.instFORL1Recall, (self.screenRect.centerx - (self.textwidth / 2),
+                                               self.screenRect.centery - (self.textheigth / 2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+        # Presentation of second FR Intro screen
+        self.screen.fill(self.settings.bgColor)
+        self.instGenRecall = self.textblock.textObject(self.settings.instRecall, self.settings.instFont,
+        self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.instGenRecall, (self.screenRect.centerx - (self.textwidth / 2),
+        self.screenRect.centery - (self.textheigth / 2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+    def startinstFORRecallL2Block(self):
+        # Presentation of recall init screen
+        self.screen.fill(self.settings.bgColor)
+        self.textwidth = self.settings.instWidth
+        self.textheigth = self.settings.instHeigth
+
+        self.instFORL2Recall = self.textblock.textObject(self.settings.instFORRecallL2, self.settings.instFont,
+                                                        self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.instFORL2Recall, (self.screenRect.centerx - (self.textwidth / 2),
+                                               self.screenRect.centery - (self.textheigth / 2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+        # Presentation of second FR Intro screen
+        self.screen.fill(self.settings.bgColor)
+        self.instGenRecall = self.textblock.textObject(self.settings.instRecall, self.settings.instFont,
+        self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.instGenRecall, (self.screenRect.centerx - (self.textwidth / 2),
+        self.screenRect.centery - (self.textheigth / 2)))
         pygame.display.flip()
         self.processInstEvents()
 
@@ -263,43 +464,50 @@ class Experiment:
         self.textheigth = self.settings.instHeigth
         self.instEndMath = self.textblock.textObject(self.settings.mathEnd, self.settings.instFont,
                                                      self.settings.instWidth, self.settings.instHeigth)
-        # set sceen timout to 1 second
-        timeout = 2
-        startTime = pygame.time.get_ticks() / 1000
-        while pygame.time.get_ticks() / 1000 - startTime < timeout:
-            self.screen.blit(self.instEndMath, (self.screenRect.centerx - (self.textwidth / 2),
-                                                self.screenRect.centery - (self.textheigth / 2)))
-            pygame.display.flip()
 
-    def startFreeRecallEndBlock(self):
+        self.screen.blit(self.instEndMath, (self.screenRect.centerx - (self.textwidth / 2),
+                                            self.screenRect.centery - (self.textheigth / 2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+    def startPracRecallEndBlock(self):
+         # Presentation of exp. end screen
+        self.screen.fill(self.settings.bgColor)
+        self.textwidth = self.settings.instWidth
+        self.textheigth = self.settings.instHeigth
+
+        self.instExpEnd = self.textblock.textObject(self.settings.instEndPractice, self.settings.instFont,
+                                                     self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.instExpEnd, (self.screenRect.centerx - (self.textwidth / 2),
+                                                 self.screenRect.centery - (self.textheigth / 2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+    def startIntroStudyBlock(self):
+         # Presentation of exp. end screen
+        self.screen.fill(self.settings.bgColor)
+        self.textwidth = self.settings.instWidth
+        self.textheigth = self.settings.instHeigth
+
+        self.instStudyIntro = self.textblock.textObject(self.settings.introStudy, self.settings.instFont,
+                                                     self.settings.instWidth, self.settings.instHeigth)
+        self.screen.blit(self.instStudyIntro, (self.screenRect.centerx - (self.textwidth / 2),
+                                                 self.screenRect.centery - (self.textheigth / 2)))
+        pygame.display.flip()
+        self.processInstEvents()
+
+    def startRecallEndBlock(self):
         # Presentation of End FR screen
         self.screen.fill(self.settings.bgColor)
         self.textwidth = self.settings.instWidth
         self.textheigth = self.settings.instHeigth
-        self.instEndFR = self.textblock.textObject(self.settings.FREnd, self.settings.instFont,
+        self.instRecallEnd = self.textblock.textObject(self.settings.RecallEnd, self.settings.instFont,
                                                      self.settings.instWidth, self.settings.instHeigth)
-        # set sceen timout to 1 second
-        timeout = 2
-        startTime = pygame.time.get_ticks() / 1000
-        while pygame.time.get_ticks() / 1000 - startTime < timeout:
-            self.screen.blit(self.instEndFR, (self.screenRect.centerx - (self.textwidth / 2),
-                                                self.screenRect.centery - (self.textheigth / 2)))
-            pygame.display.flip()
 
-    def startCuedRecallEndBlock(self):
-        # Presentation of End CR screen
-        self.screen.fill(self.settings.bgColor)
-        self.textwidth = self.settings.instWidth
-        self.textheigth = self.settings.instHeigth
-        self.instEndCR = self.textblock.textObject(self.settings.CREnd, self.settings.instFont,
-                                                     self.settings.instWidth, self.settings.instHeigth)
-        # set sceen timout to 1 second
-        timeout = 2
-        startTime = pygame.time.get_ticks() / 1000
-        while pygame.time.get_ticks() / 1000 - startTime < timeout:
-            self.screen.blit(self.instEndCR, (self.screenRect.centerx - (self.textwidth / 2),
-                                                self.screenRect.centery - (self.textheigth / 2)))
-            pygame.display.flip()
+        self.screen.blit(self.instRecallEnd, (self.screenRect.centerx - (self.textwidth / 2),
+                                            self.screenRect.centery - (self.textheigth / 2)))
+        pygame.display.flip()
+        self.processInstEvents()
 
     def startExpEndBlock(self):
          # Presentation of exp. end screen
@@ -327,22 +535,28 @@ class Experiment:
             # Draw visual objects
             self.drawCountdown(1)
 
-    def startStudyBlock(self):
+    def startStudyBlock(self, wordlist):
         """Starts presentation of stimuli"""
 
-        for trialIdx in range(len(self.settings.wordsList)):
+        stimlist = []
+
+        for trialIdx in range(len(wordlist)):
 
             # Prepare stimuli
-            self.renderStimuli(trialIdx)
+            self.renderStimuli(wordlist, trialIdx)
 
             # Draw visual objects
             self.drawStimulus(5.0)
-            self.drawMemCue(2.0)
             self.drawISI(1.0)
 
             # Save results
-            # TODO - save results to a file
+            stimlist.append(wordlist[trialIdx])
 
+        # append stimlist to results dict
+        if wordlist == self.settings.wordsList1:
+            self.results['L1words'] = stimlist
+        elif wordlist == self.settings.wordsList2:
+            self.results['L2words'] = stimlist
 
     def startMathBlock(self, duration):
         """Starts presentation of math trials"""
@@ -363,9 +577,6 @@ class Experiment:
             break
 
 
-                # Save results
-                # TODO - save results to a file
-
     def renderCountdown(self, trial):
         """Creates the countdown to be displayed on the screen."""
         # Render countdown
@@ -379,22 +590,18 @@ class Experiment:
         # Place countdown at center of screen
         self.CountdownRect.center = self.screenRect.center
 
-    def renderStimuli(self, trial):
+    def renderStimuli(self, word, trial):
         """Creates the study word to be displayed on the screen"""
 
-        # Render item and memory cue
+        # Render items
         # parameters are the string, anti-aliasing, color of text, color of background
-        self.studyItem = self.settings.font.render(self.settings.wordsList[trial],
+        self.studyItem = self.settings.font.render(word[trial],
                                                    True, self.settings.black, self.settings.bgColor)
 
-        self.memCue = self.settings.font.render(self.settings.memCueList[trial],
-                                                True, self.settings.black, self.settings.bgColor)
-        # Get the rectangle of the word and memory cue (for positioning)
+        # Get the rectangle of the word
         self.studyItemRect = self.studyItem.get_rect()
-        self.memCueRect = self.memCue.get_rect()
-        # Place both at the center of the screen
+        # Place at the center of the screen
         self.studyItemRect.center = self.screenRect.center
-        self.memCueRect.center = self.screenRect.center
 
     def renderMathItems(self, trial):
         """Renders the math equations that are displayed on the screen"""
@@ -408,19 +615,6 @@ class Experiment:
         # Place math item at the center of the screen
         self.mathItemRect.center = self.screenRect.center
 
-    def renderCues(self, trial):
-        """Renders the Cue to be displayed on the screen during Cued Recall"""
-
-        # Render cues
-        # parameters are the string, anti-aliasing, color of text, color of background
-        self.cueItem = self.settings.font.render(self.settings.cuesList[trial],
-                                                   True, self.settings.black, self.settings.bgColor)
-
-        # Get the rectangle of the cue (for positioning)
-        self.cueItemRect = self.cueItem.get_rect()
-        # Place at the center of the screen
-        self.cueItemRect = self.cueItemRect.move(self.screenRect.width/2 - self.cueItemRect.width,
-                                                 self.screenRect.centery)
 
     def renderQuestions(self, trial):
         """Renders the question to be displayed on the screen during the demog. quesionnaire"""
@@ -470,22 +664,6 @@ class Experiment:
         while (pygame.time.get_ticks() / 1000) - startTime < duration:
             # Draw to background...
             self.screen.blit(self.studyItem, self.studyItemRect)
-            # Draw to foreground...
-            pygame.display.flip()
-
-    def drawMemCue(self, duration):
-        """ Draws a memory cue for a given duration of time."""
-
-        # Get time stamp
-        startTime = pygame.time.get_ticks() / 1000
-
-        # Fill background
-        self.screen.fill(self.settings.bgColor)
-
-        # while loop for drawing stimulus to screen for "duration" of time
-        while (pygame.time.get_ticks() / 1000) - startTime < duration:
-            # Draw to background...
-            self.screen.blit(self.memCue, self.memCueRect)
             # Draw to foreground...
             pygame.display.flip()
 
@@ -552,7 +730,6 @@ class Experiment:
             # Flip to foreground
             pygame.display.flip()
 
-
     def doFreeRecall(self, duration):
         """Samples user input for Free Recall Task and blits it to the screen."""
 
@@ -598,55 +775,107 @@ class Experiment:
             pygame.display.update()
             clock.tick(30)
 
-    def doCuedRecall(self):
-        """Samples user input for Cued Recall Task and blits it to the screen."""
+    def doFreeRecallL1(self, duration):
+        """Samples user input for Free Recall Task and blits it to the screen."""
 
         # Get time stamps
+        startTime = pygame.time.get_ticks() / 1000
         clock = pygame.time.Clock()
 
         # Initialize list to store user input
         self.userInputs = []
-        self.responses = []
-        self.cues = []
+        recalledItemsL1 = []
 
         # Fill surface background at the beginning
         self.screen.fill(self.settings.bgColor)
         self.textinput = TextInput("arial", 40)
 
-        for trialIdx in range(len(self.settings.cuesList)):
+        # while loop for free recall for "duration" of time
+        while (pygame.time.get_ticks() / 1000) - startTime < duration:
 
-            while True:
-                 # create event instance to handle exit
-                 events = pygame.event.get()
-                 for event in events:
-                    if event.type == pygame.QUIT:
-                        exit()
-                 # Feed with events every frame
-                 if self.textinput.update(events):
-                     self.userInputs.append(self.settings.createText(self.textinput.get_text(), self.settings.black))
-                     # append user input to list of strings (for results saving)
-                     self.cues.append(self.settings.cuesList[trialIdx])
-                     self.responses.append(self.textinput.get_text())
+            # create event instance to handle exit
+            events = pygame.event.get()
+            for event in events:
+                if event.type == pygame.QUIT:
+                    exit()
+            # Feed with events every frame
+            if self.textinput.update(events):
+                self.userInputs.append(self.settings.createText(self.textinput.get_text(), self.settings.black))
+                # append user input to list of strings (for results saving)
+                recalledItemsL1.append(self.textinput.get_text())
+                self.textinput = TextInput("arial", 40)
 
-                     self.textinput = TextInput("arial", 40)
-                     break
+                # Fill screen
+            self.screen.fill((self.settings.bgColor))
+            # Blit surface onto the screen
+            self.screen.blit(self.textinput.get_surface(), (self.screenRect.centerx,
+                                                            self.screenRect.height / 5))
 
-                 # Fill screen
-                 self.screen.fill((self.settings.bgColor))
-                 # Blit surface onto the screen
-                 self.screen.blit(self.textinput.get_surface(), (self.screenRect.centerx,
-                                                                 self.screenRect.centery))
-                 # Prepare stimuli and blit to screen
-                 self.renderCues(trialIdx)
-                 self.screen.blit(self.cueItem, self.cueItemRect)
+            for n, text_surf in enumerate(self.userInputs):
+                # 12 rows, offset 50 pixels.
+                ypos = self.screenRect.height/3 + (n % 12) * 50
+                # After these 12 rows add a new column with up to 3 columns.
+                xpos = 50 + n // 12 * self.screenRect.width/3
+                # blit every input to screen
+                self.screen.blit(text_surf, (xpos, ypos))
 
-                 # Update screen
-                 pygame.display.update()
-                 clock.tick(30)
+            # Update screen
+            pygame.display.update()
+            clock.tick(30)
 
         # Append user inputs to results file
-        self.results.append(self.cues)
-        self.results.append(self.responses)
+        self.results['L1recall'] = recalledItemsL1
+
+    def doFreeRecallL2(self, duration):
+        """Samples user input for Free Recall Task and blits it to the screen."""
+
+        # Get time stamps
+        startTime = pygame.time.get_ticks() / 1000
+        clock = pygame.time.Clock()
+
+        # Initialize list to store user input
+        self.userInputs = []
+        recalledItemsL2 = []
+
+        # Fill surface background at the beginning
+        self.screen.fill(self.settings.bgColor)
+        self.textinput = TextInput("arial", 40)
+
+        # while loop for free recall for "duration" of time
+        while (pygame.time.get_ticks() / 1000) - startTime < duration:
+
+            # create event instance to handle exit
+            events = pygame.event.get()
+            for event in events:
+                if event.type == pygame.QUIT:
+                    exit()
+            # Feed with events every frame
+            if self.textinput.update(events):
+                self.userInputs.append(self.settings.createText(self.textinput.get_text(), self.settings.black))
+                # append user input to list of strings (for results saving)
+                recalledItemsL2.append(self.textinput.get_text())
+                self.textinput = TextInput("arial", 40)
+
+                # Fill screen
+            self.screen.fill((self.settings.bgColor))
+            # Blit surface onto the screen
+            self.screen.blit(self.textinput.get_surface(), (self.screenRect.centerx,
+                                                            self.screenRect.height / 5))
+
+            for n, text_surf in enumerate(self.userInputs):
+                # 12 rows, offset 50 pixels.
+                ypos = self.screenRect.height/3 + (n % 12) * 50
+                # After these 12 rows add a new column with up to 3 columns.
+                xpos = 50 + n // 12 * self.screenRect.width/3
+                # blit every input to screen
+                self.screen.blit(text_surf, (xpos, ypos))
+
+            # Update screen
+            pygame.display.update()
+            clock.tick(30)
+
+        # Append user inputs to results file
+        self.results['L2recall'] = recalledItemsL2
 
     def doDemQuestions(self):
         """Samples user input for demographic questions and blits them to the screen."""
@@ -694,7 +923,11 @@ class Experiment:
                 clock.tick(30)
 
         # Append user inputs to results file
-        self.results.append(self.finalItems)
+        self.results['age'].append(self.finalItems[0])
+        self.results['gender'].append(self.finalItems[1])
+        self.results['major'].append(self.finalItems[2])
+        self.results['semester'].append(self.finalItems[3])
+        self.results['mothertongue'].append(self.finalItems[4])
 
     def createFixation(self):
         """Creates a fixation point."""
@@ -742,16 +975,12 @@ class Experiment:
 
         return rectLeft, rectRight
 
-
-# TODO: Finish this results saver method
-    def saveResultsToFile(self, filename, list):
-        """Saves all exp. results to a data file."""
-        readlist = list
-        finalList = zip(*readlist)
-
-        with open(filename, "w") as file:
-            writer = csv.writer(file)
-            writer.writerow(['var1', 'var2', 'var3', 'var4'])
-            writer.writerows(finalList)
+    def saveResultsToFile(self, filename, dict):
+        """Saves all exp. results to a csv file."""
+        resultsdict = dict
 
 
+        with open(filename, 'w') as f:
+            w = csv.writer(f, delimiter=',', lineterminator='\n')
+            w.writerow(resultsdict.keys())
+            w.writerows(zip_longest(*resultsdict.values()))
